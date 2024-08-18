@@ -1,0 +1,71 @@
+########################################################################################################################
+## NECONOMICON - https://github.com/viduc/neconomicon                                                                 ##
+## This file is a part of NECONOMICON application                                                                     ##
+########################################################################################################################
+services:
+  php:
+    container_name: neconomicon_php
+    build:
+      context: ./docker/php-fpm
+#      args:
+#        - ENABLE_XDEBUG=0
+#        - XDEBUG_REMOTE_PORT=9000
+#        - UID=1001
+#        - GID=1001
+    ports:
+      - "127.0.0.1:9099:9099"
+    expose:
+      - "9099"
+    environment:
+      XDEBUG_MODE: "${XDEBUG_MODE}"
+    volumes:
+      - ./docker/php-fpm/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - "./:/var/www/symfony:rw,cached"
+    restart: on-failure
+    networks:
+      - neconomicon_network
+    extra_hosts:
+      # Ensure that host.docker.internal is correctly defined on Linux
+      - "host.docker.internal:host-gateway"
+  nginx:
+    container_name: neconomicon_nginx
+    build:
+      context: ./docker/nginx
+    depends_on:
+      - php
+    ports:
+      #- "99:443"
+      - "100:80"
+    volumes:
+      - "./:/var/www/symfony:ro,cached"
+      - "./logs/nginx/:/var/log/nginx:delegated"
+    restart: on-failure
+    networks:
+      - neconomicon_network
+###> doctrine/doctrine-bundle ###
+  pgsql:
+    container_name: neconomicon_pgsql
+    build:
+      context: ./docker/pgsql
+    environment:
+        POSTGRES_PASSWORD: 12345
+        POSTGRES_USER: neconomicon
+    volumes:
+      - ./docker/pgsql/init:/docker-entrypoint-initdb.d
+      - ./docker/pgsql/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./docker/pgsql/data:/var/lib/postgresql/data:rw
+    restart: on-failure
+    expose:
+      - "5432"
+    ports:
+      - "127.0.0.1:5454:5432"
+    networks:
+      - neconomicon_network
+
+networks:
+  neconomicon_network:
+    driver: bridge
+volumes:
+###> doctrine/doctrine-bundle ###
+  database_data:
+###< doctrine/doctrine-bundle ###
