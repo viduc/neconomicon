@@ -14,7 +14,7 @@ init:
 
 ## —— Docker  ——————————————————————————————————————————————————————————————————
 build: pcov-conf-enable
-	@$(DOCKER) build -- --no-cache
+	@$(DOCKER) build --pull --no-cache
 
 up:
 	@$(DOCKER) --env-file ./docker/.env.local up -d --no-recreate
